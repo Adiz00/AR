@@ -1,9 +1,14 @@
 
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { getNews } from '@/http/api';
+import { toast } from '@/hooks/use-toast';
+import { LineWave } from "react-loader-spinner";
+import { useQuery } from '@tanstack/react-query';
+
 
 type Article = {
     id: string;
@@ -15,39 +20,80 @@ type Article = {
     date: string;
 };
 
-const ARTICLES: Article[] = [
-    {
-        id: 'a1',
-        title: 'Sculpted Silhouettes: Fall 2025 Trends',
-        image: '/assets/storyImg1.png',
-        tags: ['Runway', 'Fall 2025', 'Silhouettes'],
-        excerpt: 'Designers are experimenting with bold contours and architectural tailoring for a refined yet experimental fall palette.',
-        author: 'A. Monroe',
-        date: 'Oct 10, 2025',
-    },
-    {
-        id: 'a2',
-        title: 'Sustainable Fabrics Making Waves',
-        image: '/assets/storyImg2.png',
-        tags: ['Sustainability', 'Materials'],
-        excerpt: 'New bio-based fibers and recycled blends are closing the gap between performance and planet-friendly fashion.',
-        author: 'K. Rivera',
-        date: 'Oct 8, 2025',
-    },
-    {
-        id: 'a3',
-        title: 'Streetwear to Smartwear: The Crossover',
-        image: '/assets/img-22.png',
-        tags: ['Streetwear', 'Tech'],
-        excerpt: 'Casual silhouettes are getting functional upgrades — hidden pockets, adaptable fits and tech-friendly fabrics.',
-        author: 'J. Patel',
-        date: 'Oct 5, 2025',
-    },
-];
+// const ARTICLES: Article[] = [
+//     {
+//         id: 'a1',
+//         title: 'Sculpted Silhouettes: Fall 2025 Trends',
+//         image: '/assets/storyImg1.png',
+//         tags: ['Runway', 'Fall 2025', 'Silhouettes'],
+//         excerpt: 'Designers are experimenting with bold contours and architectural tailoring for a refined yet experimental fall palette.',
+//         author: 'A. Monroe',
+//         date: 'Oct 10, 2025',
+//     },
+//     {
+//         id: 'a2',
+//         title: 'Sustainable Fabrics Making Waves',
+//         image: '/assets/storyImg2.png',
+//         tags: ['Sustainability', 'Materials'],
+//         excerpt: 'New bio-based fibers and recycled blends are closing the gap between performance and planet-friendly fashion.',
+//         author: 'K. Rivera',
+//         date: 'Oct 8, 2025',
+//     },
+//     {
+//         id: 'a3',
+//         title: 'Streetwear to Smartwear: The Crossover',
+//         image: '/assets/img-22.png',
+//         tags: ['Streetwear', 'Tech'],
+//         excerpt: 'Casual silhouettes are getting functional upgrades — hidden pockets, adaptable fits and tech-friendly fabrics.',
+//         author: 'J. Patel',
+//         date: 'Oct 5, 2025',
+//     },
+// ];
 
 const FashionNews: React.FC = () => {
     const [bookmarks, setBookmarks] = useState<Record<string, boolean>>({});
     const [likes, setLikes] = useState<Record<string, number>>({});
+     const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
+
+    const { data: newsData = { news: [], totalPages: 0, currentPage: 1, totalCount: 0 }, isLoading, isError} = useQuery({
+    queryKey: ["news", currentPage],
+    queryFn: () => getNews({ page: currentPage, limit: PAGE_SIZE }),
+    staleTime: 10 * 1000,
+  });
+
+
+  const { news, totalPages, totalCount } = newsData;
+
+
+  useEffect(() => {
+    if (news && !isLoading && !isError) {
+      console.log("News fetched successfully", news);
+      toast({
+        className:
+          "text-black border-2 border-green-600 shadow-lg rounded-lg h-16",
+        title: "News fetched successfully.",
+      });
+    }
+  }, [news, isLoading, isError]);
+
+  if (isLoading  ) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 ">
+            <LineWave
+              visible={true}
+              height="100"
+              width="100"
+              color="#000"
+              ariaLabel="line-wave-loading"
+              wrapperStyle={{}}
+              wrapperClass=""
+              firstLineColor=""
+              middleLineColor=""
+              lastLineColor=""
+            />
+          </div>
+  );
+  if (isError) return <div>Failed to load customers</div>;
 
     const toggleBookmark = (id: string) => {
         setBookmarks((s) => ({ ...s, [id]: !s[id] }));
@@ -56,6 +102,8 @@ const FashionNews: React.FC = () => {
     const addLike = (id: string) => {
         setLikes((s) => ({ ...s, [id]: (s[id] || 0) + 1 }));
     };
+
+
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -112,10 +160,10 @@ const FashionNews: React.FC = () => {
             <section>
                 <h2 className="text-2xl font-semibold mb-4">Latest articles</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {ARTICLES.map((a) => (
+                    {news.map((a) => (
                         <Card key={a.id} className="overflow-hidden flex flex-col">
                             <div className="h-48 bg-slate-100">
-                                <img src={'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1zejeaODsw9puHQgruAteDcHtHiJSQs2b9ze4bgG_J6Sdx6Z8SZ53yynb5wiPsLqjWXo&usqp=CAU'} alt={a.title} className="object-cover w-full h-full" />
+                                <img src={a.image} alt={a.title} className="object-cover w-full h-full" />
                             </div>
                             <CardContent className="flex-1">
                                 <div className="flex items-center justify-between">

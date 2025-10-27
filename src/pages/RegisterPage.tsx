@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/http/api";
+import { register } from "@/http/api";
 import useTokenStore from "@/store";
 import { useMutation } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
@@ -18,49 +18,46 @@ import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordInput } from "@/components/ui/password-input";
 
-const LoginPage = () => {
+const RegisterPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const setToken = useTokenStore((state) => state.setToken);
-  const setUser = useTokenStore((state) => state.setUser);
-
+  const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
   const mutation = useMutation({
-    mutationFn: login,
+    mutationFn: register,
     onSuccess: (response) => {
-      console.log("Login successful", response);
-      setToken(response?.token);
-      setUser(response?.user || null);
-      navigate("/dashboard");
+      console.log("Registration successful", response);
+      navigate("/auth/login");
       toast({
         className:
           "text-black border-2 border-green-600 shadow-lg rounded-lg h-16",
-        title: "Login successful",
+        title: "Registration successful",
       });
     },
     onError: (error: any) => {
       const msg = error?.response?.data?.message || "Something went wrong";
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: msg || "Invalid email or password",
+        title: "Registration failed",
+        description: msg,
       });
     },
   });
 
   const handleLoginSubmit = () => {
+    const name = nameRef.current?.value;
     const email = emailRef.current?.value;
     const password = passwordRef.current?.value;
 
     // Basic validation
-    if (!email || !password) {
+    if (!email || !password || !name) {
       return toast({
         variant: "destructive",
-        title: "Login failed",
-        description: "Email and password are required",
+        title: "Registration failed",
+        description: "Email, password, and name are required",
       });
     }
 
@@ -73,15 +70,15 @@ const LoginPage = () => {
       });
     }
     // navigate("/dashboard");
-    mutation.mutate({  email, password,  });
+    mutation.mutate({ name, email, password });
   };
   return (
     <section className="flex justify-center items-center h-screen">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Register</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account. <br />
+            Enter your email below to register for an account. <br />
             {mutation.isError && (
               <span className="text-red-500 text-sm">
                 {"Something went wrong"}
@@ -90,6 +87,16 @@ const LoginPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              ref={nameRef}
+              id="name"
+              type=""
+              placeholder="John Doe"
+              required
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -128,9 +135,9 @@ const LoginPage = () => {
               </Link>
             </div> */}
             <div className="mt-4 text-center text-sm">
-              Don't have an account?{" "}
-              <Link to={"/auth/register"} className="underline">
-                Sign up
+              Already have an account?{" "}
+              <Link to={"/auth/login"} className="underline">
+                Log in
               </Link>
             </div>
           </div>
@@ -140,4 +147,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

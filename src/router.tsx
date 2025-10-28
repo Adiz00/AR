@@ -8,6 +8,7 @@ import AuthLayout from './layouts/AuthLayout';
 import TryOnAvatar from './pages/tryOnAvatar.tsx';
 import FashionNews from './pages/fashionNews.tsx';
 import ImageAiSearch from './pages/imageAiSearch.tsx';
+import AvatarCanvas from './pages/AvatarCanvas.tsx';
 
 
 const router = createBrowserRouter([
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
                 path: 'try-on-avatar',
                 element: <TryOnAvatar />,
             },
+            // {
+            //     path: 'avatar-canvas',
+            //     element: <AvatarCanvas />,
+            // },
             {
                 path: 'fashion-news',
                 element: <FashionNews />,
@@ -53,6 +58,17 @@ const router = createBrowserRouter([
                 path: 'image-ai-search',
                 element: <ImageAiSearch />,
             },
+        ],
+    },
+    {
+        path: '',
+        children: [
+           
+            {
+                path: 'avatar-canvas',
+                element: <AvatarCanvas />,
+            },
+           
         ],
     },
     {
@@ -79,6 +95,10 @@ const router = createBrowserRouter([
             //     path: 'register-driver',
             //     element: <RegisterDriver />,
             // },
+             {
+                path: 'avatar-canvas',
+                element: <AvatarCanvas />,
+            },
         ],
     },
 ], 

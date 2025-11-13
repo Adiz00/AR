@@ -9,6 +9,10 @@ import TryOnAvatar from './pages/tryOnAvatar.tsx';
 import FashionNews from './pages/fashionNews.tsx';
 import ImageAiSearch from './pages/imageAiSearch.tsx';
 import AvatarCanvas from './pages/AvatarCanvas.tsx';
+import ForgetPasswordPage from './pages/ForgetPassword.tsx';
+import VerifyOtpPage from './pages/VerifyOtp.tsx';
+import Home from './pages/Home.tsx';
+import AvatarDetails from './pages/AvatarDetails.tsx';
 
 
 const router = createBrowserRouter([
@@ -40,7 +44,8 @@ const router = createBrowserRouter([
         children: [
             {
                 path: 'dashboard',
-                element: <TryOnAvatar />,
+                // element: <Home />,
+                element: <AvatarDetails />,
             },
             {
                 path: 'try-on-avatar',
@@ -83,14 +88,14 @@ const router = createBrowserRouter([
                 path: 'register',
                 element: <RegisterPage />,
             },
-            // {
-            //     path: 'forget-password',
-            //     element: <ForgetPasswordPage />,
-            // },
-            // {
-            //     path: 'verify-otp',
-            //     element: <VerifyOtpPage />,
-            // },
+            {
+                path: 'forget-password',
+                element: <ForgetPasswordPage />,
+            },
+            {
+                path: 'verify-otp',
+                element: <VerifyOtpPage />,
+            },
             // {
             //     path: 'register-driver',
             //     element: <RegisterDriver />,

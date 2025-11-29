@@ -18,6 +18,7 @@ type Article = {
     excerpt: string;
     author: string;
     date: string;
+    content?: string;
 };
 
 // const ARTICLES: Article[] = [
@@ -53,6 +54,7 @@ type Article = {
 const FashionNews: React.FC = () => {
     const [bookmarks, setBookmarks] = useState<Record<string, boolean>>({});
     const [likes, setLikes] = useState<Record<string, number>>({});
+    const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
      const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 
@@ -103,7 +105,13 @@ const FashionNews: React.FC = () => {
         setLikes((s) => ({ ...s, [id]: (s[id] || 0) + 1 }));
     };
 
+    const openArticleModal = (article: any) => {
+        setSelectedArticle({ ...article, content: article.content || article.excerpt + '\n\nFull article content would be loaded here. ' + article.excerpt });
+    };
 
+    const closeArticleModal = () => {
+        setSelectedArticle(null);
+    };
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -160,15 +168,15 @@ const FashionNews: React.FC = () => {
             <section>
                 <h2 className="text-2xl font-semibold mb-4">Latest articles</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {news.map((a) => (
-                        <Card key={a.id} className="overflow-hidden flex flex-col">
+                    {news.map((a:any) => (
+                        <Card key={a.id} className="overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-shadow" onClick={() => openArticleModal(a)}>
                             <div className="h-48 bg-slate-100">
                                 <img src={a.image} alt={a.title} className="object-cover w-full h-full" />
                             </div>
                             <CardContent className="flex-1">
                                 <div className="flex items-center justify-between">
                                     <div className="flex gap-2">
-                                        {a.tags.slice(0, 2).map((t) => (
+                                        {a.tags.slice(0, 2).map((t:any) => (
                                             <span key={t} className="text-xs text-muted-foreground">#{t}</span>
                                         ))}
                                     </div>
@@ -177,10 +185,10 @@ const FashionNews: React.FC = () => {
                                 <CardTitle className="mt-3 text-lg">{a.title}</CardTitle>
                                 <p className="text-sm text-muted-foreground mt-2">{a.excerpt}</p>
                             </CardContent>
-                            <CardFooter className="justify-between">
+                            <CardFooter className="justify-between" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center gap-3">
-                                    <Button variant="ghost" size="sm" onClick={() => addLike(a.id)}>Like • {likes[a.id] || 0}</Button>
-                                    <Button variant={bookmarks[a.id] ? 'secondary' : 'outline'} size="sm" onClick={() => toggleBookmark(a.id)}>{bookmarks[a.id] ? 'Bookmarked' : 'Bookmark'}</Button>
+                                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); addLike(a.id); }}>Like • {likes[a.id] || 0}</Button>
+                                    <Button variant={bookmarks[a.id] ? 'secondary' : 'outline'} size="sm" onClick={(e) => { e.stopPropagation(); toggleBookmark(a.id); }}>{bookmarks[a.id] ? 'Bookmarked' : 'Bookmark'}</Button>
                                 </div>
                                 <div className="text-sm text-muted-foreground">By {a.author}</div>
                             </CardFooter>
@@ -188,6 +196,43 @@ const FashionNews: React.FC = () => {
                     ))}
                 </div>
             </section>
+
+            {/* Article Modal */}
+            {selectedArticle && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <CardHeader>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <CardTitle className="text-2xl">{selectedArticle.title}</CardTitle>
+                                    <CardDescription className="mt-2">By {selectedArticle.author} • {selectedArticle.date}</CardDescription>
+                                </div>
+                                <Button variant="outline" size="sm" onClick={closeArticleModal}>✕</Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="mb-4 h-64 bg-slate-100 rounded-lg overflow-hidden">
+                                <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex gap-2 mb-4">
+                                {selectedArticle.tags.map((t: any) => (
+                                    <span key={t} className="px-2 py-1 bg-accent text-accent-foreground text-xs rounded-full">{t}</span>
+                                ))}
+                            </div>
+                            <div className="prose prose-sm max-w-none">
+                                <p className="text-muted-foreground whitespace-pre-wrap leading-7">{selectedArticle.content}</p>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="justify-between">
+                            <div className="flex items-center gap-3">
+                                <Button variant="ghost" onClick={() => addLike(selectedArticle.id)}>Like • {likes[selectedArticle.id] || 0}</Button>
+                                <Button variant={bookmarks[selectedArticle.id] ? 'secondary' : 'outline'} onClick={() => toggleBookmark(selectedArticle.id)}>{bookmarks[selectedArticle.id] ? 'Bookmarked' : 'Bookmark'}</Button>
+                            </div>
+                            <Button variant="outline" onClick={closeArticleModal}>Close</Button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 };

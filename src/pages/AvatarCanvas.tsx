@@ -9,10 +9,10 @@ import {
   UserAuthorizedEvent,
   UserSetEvent,
 } from "@readyplayerme/react-avatar-creator";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const config: AvatarCreatorConfig = {
+const config = {
   clearCache: true,
   bodyType: "fullbody",
   quickStart: false,
@@ -25,6 +25,23 @@ function AvatarCanvas() {
 
   const [avatarDetails, setAvatarDetails] = useState<any>(null);
   const [token, setToken] = useState<any>(null);
+
+  
+useEffect(() => {
+  const handleMessage = (event: MessageEvent) => {
+    if (event.origin !== "https://ar-2lgj3b.readyplayer.me") return;
+
+    console.log("RAW EVENT:", event.data);
+
+    if (event.data?.eventName === "rpm:assetChanged") {
+      console.log("ASSET CHANGED:", event.data.data);
+    }
+  };
+
+  window.addEventListener("message", handleMessage);
+  return () => window.removeEventListener("message", handleMessage);
+}, []);
+
 
   const navigate = useNavigate()
 
@@ -139,7 +156,7 @@ function AvatarCanvas() {
   return (
     <div style={{ display: "flex" }}>
       <div style={{ width: "100vw", height: "100vh" }}>
-        <AvatarCreator
+        <AvatarCreatorRaw
           subdomain="ar-2lgj3b"
           config={config}
           style={style}

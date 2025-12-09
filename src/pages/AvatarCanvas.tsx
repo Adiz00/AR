@@ -13,10 +13,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const config = {
-  clearCache: true,
-  bodyType: "fullbody",
-  quickStart: false,
-  language: "en",
+  // clearCache: true,
+  // bodyType: "fullbody",
+  // quickStart: false,
+  // language: "en",
 };
 
 const style = { width: "100%", height: "100vh", border: "none", margin: 0 };
@@ -60,14 +60,14 @@ useEffect(() => {
     console.log(`Avatar URL is:`, event );
     const avatarUrl = event.data.url;
     const avatarId = avatarUrl.split("/").pop()?.split(".")[0];
-    if (avatarId) fetchAvatarDetails(avatarId);
+    // if (avatarId) fetchAvatarDetails(avatarId);
 
     // const token = await getReadyPlayerToken('6911c2294a1ba3a647c2ec31');
     // console.log('🪙 Ready Player Token:', token);
     // const avatarDetails = await getAvatarDetails(avatarId, token);
     // console.log('🧑‍🎨 Avatar Details:', avatarDetails);
     setTimeout(() => {
-    navigate('/dashboard');
+    navigate('/dashboard', { state: { avatarId } });
     }, 5000);
   };
 
@@ -156,7 +156,7 @@ useEffect(() => {
   return (
     <div style={{ display: "flex" }}>
       <div style={{ width: "100vw", height: "100vh" }}>
-        <AvatarCreatorRaw
+        <AvatarCreator
           subdomain="ar-2lgj3b"
           config={config}
           style={style}

@@ -6,6 +6,8 @@ import avatarShirt from '../assets/avatar-shirt.png';
 import avatarPant from '../assets/avatar-pant.png';
 import avatarShoes from '../assets/avatar-shoes.png';
 import { useLocation } from 'react-router-dom';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 type OutfitItem = {
   id: string;
   part: string; // Shirt, Pant, Shoes, etc.
@@ -102,16 +104,21 @@ const AvatarDetails: React.FC = () => {
         const data = await res.json();
         if (!data?.results) throw new Error('Invalid response');
 
-        const bestShirt = getBestByType(data.results, 'shirt');
-        const bestPant = getBestByType(data.results, 'pant');
-        const bestShoe = getBestByType(data.results, 'shoe');
+        const bestOutfit = getBestByType(data.results, 'outfit');
+        if (bestOutfit) {
+          setDetected({ outfit: bestOutfit });
+        } else {
+          const bestShirt = getBestByType(data.results, 'shirt');
+          const bestPant = getBestByType(data.results, 'pant');
+          const bestShoe = getBestByType(data.results, 'shoe');
 
-        const out: Record<string, any> = {};
-        if (bestShirt) out.shirt = bestShirt;
-        if (bestPant) out.pant = bestPant;
-        if (bestShoe) out.shoe = bestShoe;
+          const out: Record<string, any> = {};
+          if (bestShirt) out.shirt = bestShirt;
+          if (bestPant) out.pant = bestPant;
+          if (bestShoe) out.shoe = bestShoe;
 
-        setDetected(out);
+          setDetected(out);
+        }
       } catch (err: any) {
         console.error('detect error', err);
         setDetectError(`${err?.message} | No avatar selected` || 'Failed to detect items');
@@ -131,7 +138,13 @@ const AvatarDetails: React.FC = () => {
 
       {
 loadingDetected ? (
-        <div className="text-center py-20 text-muted-foreground">Detecting outfit items...</div>
+        <div className="text-center py-20 text-muted-foreground">
+         <DotLottieReact
+      src="https://lottie.host/7ec29151-fa84-45b3-97ad-dfc672f4760b/Zi8FX1bJUR.lottie"
+      loop
+      autoplay
+    />
+        </div>
       ) : detectError ? (
         <div className="text-center py-20 text-red-500">Error: {detectError}</div>
       ) : (
@@ -170,7 +183,7 @@ loadingDetected ? (
 
         <section className="lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {['shirt', 'pant', 'shoe'].map((type) => {
+            {Object.keys(detected).map((type) => {
               const detectedItem = detected[type];
               // fallback to MOCK_OUTFIT where part matches type
               const fallback = MOCK_OUTFIT.find((m) => m.part.toLowerCase() === type);
@@ -195,14 +208,14 @@ loadingDetected ? (
                   </div>
                   <CardContent className="flex-1">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs text-muted-foreground">{type}</div>
-                      <div className="text-sm font-semibold">{price}</div>
+                      <div className="text-xs text-muted-foreground">{type || 'outfit'}</div>
+                      <div className="text-sm font-semibold">{price || '24000'}</div>
                     </div>
                     <CardTitle className="mt-2 text-lg">{title}</CardTitle>
                     <p className="text-sm text-muted-foreground mt-2">{description}</p>
 
                     <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                      <div>Size: <span className="text-foreground">{size}</span></div>
+                      <div>Size: <span className="text-foreground">{size || '35'}</span></div>
                       <div>Occasion: <span className="text-foreground">{occasion}</span></div>
                       <div>Fabric: <span className="text-foreground">{fabric}</span></div>
                       <div>Link: <a href={purchaseLink} className="text-primary underline">Buy</a></div>

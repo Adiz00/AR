@@ -11,7 +11,10 @@ const api = axios.create({
     withCredentials: true
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+    // Add 3-second delay to every API call
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
     const token = useTokenStore.getState().token;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;

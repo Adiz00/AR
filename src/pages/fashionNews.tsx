@@ -1,5 +1,17 @@
 
 
+/**
+ * FashionNews Component
+ *
+ * This component displays a curated feed of fashion news articles with infinite scrolling.
+ * It fetches articles from a backend API and provides features like:
+ * - Article browsing with images and metadata
+ * - Bookmarking and liking functionality
+ * - Modal view for full article reading
+ * - Topic filtering and subscription options
+ * - Responsive grid layout for different screen sizes
+ */
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +21,7 @@ import { toast } from '@/hooks/use-toast';
 import { LineWave } from "react-loader-spinner";
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-
+// Type definition for article data
 type Article = {
     id: string;
     title: string;
@@ -52,20 +64,25 @@ type Article = {
 // ];
 
 const FashionNews: React.FC = () => {
+    // State for user interactions
     const [bookmarks, setBookmarks] = useState<Record<string, boolean>>({});
     const [likes, setLikes] = useState<Record<string, number>>({});
     const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-    const PAGE_SIZE =3;
+
+    // Pagination settings
+    const PAGE_SIZE = 3;
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
+    // Infinite query for fetching news articles
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, isError } = useInfiniteQuery({
-        queryKey: ["news"],
-        queryFn: ({ pageParam }) => getNews({ page: pageParam, limit: PAGE_SIZE }),
-        initialPageParam: 1,
+        queryKey: ["news"],  // Unique key for caching
+        queryFn: ({ pageParam }) => getNews({ page: pageParam, limit: PAGE_SIZE }),  // API call function
+        initialPageParam: 1,  // Start from page 1
         getNextPageParam: (lastPage) => {
+            // Determine if there are more pages to load
             return lastPage.currentPage < lastPage.totalPages ? lastPage.currentPage + 1 : undefined;
         },
-        staleTime: 10 * 1000,
+        staleTime: 10 * 1000,  // Cache data for 10 seconds
     });
 
     const allNews = data?.pages.flatMap(page => page.news) || [];
@@ -85,7 +102,7 @@ const FashionNews: React.FC = () => {
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     if (isLoading) return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/40 ">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 ">
             <LineWave
                 visible={true}
                 height="100"
@@ -102,6 +119,7 @@ const FashionNews: React.FC = () => {
     );
     if (isError) return <div>Failed to load news</div>;
 
+    // User interaction handlers
     const toggleBookmark = (id: string) => {
         setBookmarks((s) => ({ ...s, [id]: !s[id] }));
     };
@@ -110,25 +128,30 @@ const FashionNews: React.FC = () => {
         setLikes((s) => ({ ...s, [id]: (s[id] || 0) + 1 }));
     };
 
+    // Open article in modal view
     const openArticleModal = (article: any) => {
         setSelectedArticle({ ...article, content: article.content || article.excerpt + '\n\nFull article content would be loaded here. ' + article.excerpt });
     };
 
+    // Close article modal
     const closeArticleModal = () => {
         setSelectedArticle(null);
     };
 
     return (
         <div className="max-w-6xl mx-auto p-6">
+            {/* Page header */}
             <header className="mb-8">
                 <h1 className="text-3xl font-bold">Fashion News</h1>
                 <p className="text-muted-foreground mt-2">Curated updates — runway highlights, material innovations and street style trends.</p>
             </header>
 
+            {/* Hero section with featured article */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 <div className="lg:col-span-2">
                     <Card className="overflow-hidden">
-                        <div className="relative h-64 bg-slate-100">
+                        {/* Featured article image */}
+                        <div className="relative h-64 bg-muted">
                             <img src={allNews[0]?.image} alt="hero" className="object-cover w-full h-full" />
                         </div>
                         <CardHeader>
@@ -148,7 +171,9 @@ const FashionNews: React.FC = () => {
                     </Card>
                 </div>
 
+                {/* Sidebar with topics and subscription */}
                 <aside className="space-y-4">
+                    {/* Topics filter */}
                     <Card className="p-4">
                         <h3 className="text-lg font-semibold">Topics</h3>
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -159,6 +184,7 @@ const FashionNews: React.FC = () => {
                         </div>
                     </Card>
 
+                    {/* Newsletter subscription */}
                     <Card className="p-4">
                         <h3 className="text-lg font-semibold">Subscribe</h3>
                         <p className="text-sm text-muted-foreground mt-2">Get weekly highlights in your inbox.</p>
@@ -170,9 +196,11 @@ const FashionNews: React.FC = () => {
                 </aside>
             </section>
 
+            {/* Articles list section */}
             <section>
                 <h2 className="text-2xl font-semibold mb-4">Latest articles</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {/* Map through articles and render cards */}
                     {allNews.map((a:any) => (
                         <Card key={a.id} className="overflow-hidden flex flex-col cursor-pointer hover:shadow-lg transition-shadow" onClick={() => openArticleModal(a)}>
                             <div className="h-48 bg-slate-100">
@@ -205,10 +233,11 @@ const FashionNews: React.FC = () => {
                         <LineWave height="80" width="80" color="#000" />
                     </div>
                 )}
+                {/* Invisible element for intersection observer to trigger loading */}
                 <div ref={loadMoreRef} className="h-10" />
             </section>
 
-            {/* Article Modal */}
+            {/* Article modal for full reading */}
             {selectedArticle && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -222,19 +251,23 @@ const FashionNews: React.FC = () => {
                             </div>
                         </CardHeader>
                         <CardContent>
+                            {/* Article image */}
                             <div className="mb-4 h-64 bg-slate-100 rounded-lg overflow-hidden">
                                 <img src={selectedArticle.image} alt={selectedArticle.title} className="w-full h-full object-cover" />
                             </div>
+                            {/* Article tags */}
                             <div className="flex gap-2 mb-4">
                                 {selectedArticle.tags.map((t: any) => (
                                     <span key={t} className="px-2 py-1 bg-accent text-accent-foreground text-xs rounded-full">{t}</span>
                                 ))}
                             </div>
+                            {/* Article content */}
                             <div className="prose prose-sm max-w-none">
                                 <p className="text-muted-foreground whitespace-pre-wrap leading-7">{selectedArticle.content}</p>
                             </div>
                         </CardContent>
                         <CardFooter className="justify-between">
+                            {/* Interaction buttons */}
                             <div className="flex items-center gap-3">
                                 <Button variant="ghost" onClick={() => addLike(selectedArticle.id)}>Like • {likes[selectedArticle.id] || 0}</Button>
                                 <Button variant={bookmarks[selectedArticle.id] ? 'secondary' : 'outline'} onClick={() => toggleBookmark(selectedArticle.id)}>{bookmarks[selectedArticle.id] ? 'Bookmarked' : 'Bookmark'}</Button>

@@ -80,13 +80,13 @@
   width: 6px;
 }
 .thin-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: hsl(var(--muted));
 }
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #c1c1c1;
+  background-color: hsl(var(--muted-foreground));
   border-radius: 3px;
 }
 .bg-muted{
-  margin-top: 0;
-  display: none;
+  /* margin-top: 0; */
+  /* display: none; */
 }

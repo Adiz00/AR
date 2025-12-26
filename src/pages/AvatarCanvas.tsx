@@ -1,4 +1,19 @@
 
+/**
+ * AvatarCanvas Component
+ *
+ * This component integrates with Ready Player Me's Avatar Creator to allow users
+ * to create and customize 3D avatars. It handles the avatar creation process,
+ * listens for events from the iframe, and navigates to the avatar details page
+ * once creation is complete.
+ *
+ * Key Features:
+ * - Embeds Ready Player Me avatar creator iframe
+ * - Handles avatar export events
+ * - Manages user authorization and asset unlocking
+ * - Redirects to avatar details page after creation
+ */
+
 import {
   AssetUnlockedEvent,
   AvatarCreator,
@@ -12,6 +27,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// Configuration for the avatar creator
 const config = {
   // clearCache: true,
   // bodyType: "fullbody",
@@ -19,32 +35,37 @@ const config = {
   // language: "en",
 };
 
+// Styling for the iframe container
 const style = { width: "100%", height: "100vh", border: "none", margin: 0 };
 
 function AvatarCanvas() {
-
+  // State for storing avatar details and tokens
   const [avatarDetails, setAvatarDetails] = useState<any>(null);
   const [token, setToken] = useState<any>(null);
 
-  
-useEffect(() => {
-  const handleMessage = (event: MessageEvent) => {
-    if (event.origin !== "https://ar-2lgj3b.readyplayer.me") return;
+  // Navigation hook
+  const navigate = useNavigate();
 
-    console.log("RAW EVENT:", event.data);
+  // Listen for messages from the Ready Player Me iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Security check - only accept messages from Ready Player Me domain
+      if (event.origin !== "https://ar-2lgj3b.readyplayer.me") return;
 
-    if (event.data?.eventName === "rpm:assetChanged") {
-      console.log("ASSET CHANGED:", event.data.data);
-    }
-  };
+      console.log("RAW EVENT:", event.data);
 
-  window.addEventListener("message", handleMessage);
-  return () => window.removeEventListener("message", handleMessage);
-}, []);
+      // Handle asset change events
+      if (event.data?.eventName === "rpm:assetChanged") {
+        console.log("ASSET CHANGED:", event.data.data);
+      }
+    };
 
+    // Add event listener for postMessage events
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
-  const navigate = useNavigate()
-
+  // Function to fetch avatar details from backend (currently commented out)
   const fetchAvatarDetails = async (avatarId: string) => {
      try {
     const response = await fetch(`http://localhost:5000/api/avatar/${avatarId}`);
@@ -56,34 +77,32 @@ useEffect(() => {
   }
   };
 
+  // Handler for when avatar is exported/created
   const handleOnAvatarExported = async (event: AvatarExportedEvent) => {
     console.log(`Avatar URL is:`, event );
     const avatarUrl = event.data.url;
+    // Extract avatar ID from URL
     const avatarId = avatarUrl.split("/").pop()?.split(".")[0];
-    // if (avatarId) fetchAvatarDetails(avatarId);
+    // Note: fetchAvatarDetails could be called here if needed
 
-    // const token = await getReadyPlayerToken('6911c2294a1ba3a647c2ec31');
-    // console.log('🪙 Ready Player Token:', token);
-    // const avatarDetails = await getAvatarDetails(avatarId, token);
-    // console.log('🧑‍🎨 Avatar Details:', avatarDetails);
+    // Navigate to dashboard with avatar ID after a delay
     setTimeout(() => {
     navigate('/dashboard', { state: { avatarId } });
     }, 5000);
   };
 
+  // Handler for user authorization events
   const handleOnUserSet = (event: UserSetEvent) => {
     console.log(`User ID is: ${event.data.id}`);
   };
 
-  // const handleOnAvatarExported = (event: AvatarExportedEvent) => {
-  //   console.log(`Avatar URL is: ${event.data.url}`);
-  // };
-
+  // Handler for user authorization
   const handleUserAuthorized = (event: UserAuthorizedEvent) => {
     console.log(`User is:`, event.data);
-    // setToken(event.data.token);
+    // Could store token here: setToken(event.data.token);
   };
 
+  // Handler for asset unlock events
   const handleAssetUnlocked = (event: AssetUnlockedEvent) => {
     console.log(`Asset unlocked is: ${event.data.assetId}`);
   };
@@ -154,20 +173,23 @@ useEffect(() => {
 
 
   return (
+    // Full-screen container for the avatar creator
     <div style={{ display: "flex" }}>
+      {/* Main iframe container taking full viewport */}
       <div style={{ width: "100vw", height: "100vh" }}>
         <AvatarCreator
-          subdomain="ar-2lgj3b"
-          config={config}
-          style={style}
-          onAvatarExported={handleOnAvatarExported}
-          onUserAuthorized={handleUserAuthorized}
-          onAssetUnlock={handleAssetUnlocked}
-          onUserSet={handleOnUserSet}
-          // onEventReceived={handleEvent}
+          subdomain="ar-2lgj3b"  // Custom subdomain for the app
+          config={config}  // Avatar creator configuration
+          style={style}  // Full-screen styling
+          onAvatarExported={handleOnAvatarExported}  // Handle avatar creation completion
+          onUserAuthorized={handleUserAuthorized}  // Handle user login to RPM
+          onAssetUnlock={handleAssetUnlocked}  // Handle premium asset unlocks
+          onUserSet={handleOnUserSet}  // Handle user profile setup
+          // onEventReceived={handleEvent}  // Alternative event handling (commented out)
         />
       </div>
-      {/* <div style={{ width: "30vw", padding: "1rem", overflowY: "auto" }}>
+      {/* Commented out: Side panel for displaying selected assets
+      <div style={{ width: "30vw", padding: "1rem", overflowY: "auto" }}>
         <h2>Selected Assets</h2>
         {avatarDetails ? (
           <ul>

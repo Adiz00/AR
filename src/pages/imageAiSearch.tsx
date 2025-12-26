@@ -135,7 +135,7 @@ const ImageAiSearch: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                 {results.map((r) => (
                     <Card key={r.id} className="overflow-hidden">
-                        <div className="h-40 bg-slate-100 flex items-center justify-center">
+                        <div className="h-40 bg-muted flex items-center justify-center">
                             <img src={'https://www.beyours.in/cdn/shop/files/black-classic-shirt.jpg?v=1744815740'} alt={r.title} className="object-contain h-full" />
                         </div>
                         <CardHeader>
@@ -241,9 +241,9 @@ const ImageAiSearch: React.FC = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {Array.from({ length: 4 }).map((_, i) => (
                                         <div key={i} className="p-4 rounded-lg border bg-card">
-                                            <div className="h-40 bg-slate-50 animate-pulse" />
-                                            <div className="mt-3 h-4 bg-slate-50 rounded w-3/4 animate-pulse" />
-                                            <div className="mt-2 h-3 bg-slate-50 rounded w-1/2 animate-pulse" />
+                                            <div className="h-40 bg-muted animate-pulse" />
+                                            <div className="mt-3 h-4 bg-muted rounded w-3/4 animate-pulse" />
+                                            <div className="mt-2 h-3 bg-muted rounded w-1/2 animate-pulse" />
                                         </div>
                                     ))}
                                 </div>

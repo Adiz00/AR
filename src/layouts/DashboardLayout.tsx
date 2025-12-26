@@ -1,235 +1,205 @@
-                          
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+/**
+ * DashboardLayout Component
+ *
+ * This component provides the main layout structure for the dashboard pages.
+ * It includes a collapsible sidebar with navigation links, a header with user actions,
+ * and a main content area that renders child routes via Outlet.
+ *
+ * Features:
+ * - Collapsible sidebar for better space management on smaller screens
+ * - Navigation links to different dashboard sections
+ * - User dropdown menu with profile info and logout functionality
+ * - Responsive design that adapts to different screen sizes
+ */
+
+import { Button } from "@/components/ui/button"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import useTokenStore from '@/store';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
+import useTokenStore from "@/store"
 import {
-    Bell,
-    CircleUser,
-    Home,
-    LineChart,
-    Menu,
-    Package,
-    Package2,
-    Search,
-    ShoppingCart,
-    Users,
-    Car,
-    UserCog,
-    Building2,
-    ShieldCheck,
-    CarFront,
-    Loader2
-} from 'lucide-react';
-import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import logo from '../assets/blackLogo.svg'; 
-import { useToast } from '@/hooks/use-toast';
-import { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { io } from 'socket.io-client';
+  CircleUser,
+  Home,
+  Menu,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react"
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
+import logo from "../assets/blackLogo.svg"
+import { useState } from "react"
 
 const DashboardLayout = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { toast } = useToast();
-    const [searchQuery, setSearchQuery] = useState('');
-    const user = useTokenStore((state) => state.user);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const { token, setToken } = useTokenStore((state) => state);
-    // Socket.io client
-    const [socket, setSocket] = useState<any>(null);
-    // sidebar collapsed state (desktop)
-    const [collapsed, setCollapsed] = useState(false);
+  // Hooks for navigation and state management
+  const navigate = useNavigate()
+  const { toast } = useToast()
 
-   
+  // Get user data and token setter from global store
+  const user = useTokenStore((state) => state.user)
+  const { setToken } = useTokenStore()
 
-    // Clear search when route changes
+  // State for sidebar collapse functionality
+  const [collapsed, setCollapsed] = useState(false)
 
-    // if (token === '') {
-    //     return <Navigate to={'/auth/login'} replace />;
-    // }
+  // Logout function - clears token and redirects to login
+  const logout = () => {
+    setToken("")
+    navigate("/auth/login")
+    toast({
+      title: "Logout successful",
+    })
+  }
 
-    const logout = () => {
-        console.log('Logging out!');
-        setToken('');
-        navigate('/auth/login');
-        toast({
-          className: "text-black border-2 border-green-600 shadow-lg rounded-lg h-16",  
-          title: "Logout successful",
-        //   description: "Welcome back!",
-        });
-    };
-
-    return (
-      <div
-        className={`grid min-h-screen w-full ${
-          collapsed
-            ? "md:grid-cols-[72px_1fr] lg:grid-cols-[72px_1fr]"
-            : "md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]"
-        }`}
-      >
-        <div
-          className={`hidden border-r bg-muted/40 md:block ${
-            collapsed ? "w-20" : ""
-          }`}
-        >
-          <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-              <Link to="/" className="flex items-center gap-2 font-semibold">
-                <img
-                  src={logo}
-                  alt="Royal Ride"
-                  className={`${
-                    collapsed
-                      ? "h-8 w-8"
-                      : "h-8 w-8 md:h-10 md:w-10 lg:h-12 lg:w-12"
-                  }`}
-                />
-              </Link>
-            </div>
-            <div className="flex-1">
-              <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                <NavLink
-                  to="/dashboard"
-                  className={({ isActive }) => {
-                    return `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${
-                      isActive && "bg-gray-100 text-primary"
-                    }`;
-                  }}
-                >
-                  <Home className="h-4 w-4" />
-                  {!collapsed && "Home"}
-                </NavLink>
-
-                {/* <NavLink
-                                to="/try-on-avatar"
-                                className={({ isActive }) => {
-                                    return `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${
-                                        isActive && 'bg-gray-100 text-primary'
-                                    }`;
-                                }}>
-                                <ShieldCheck className="h-4 w-4" />
-                                {!collapsed && 'Try On Avatar'}
-                            </NavLink> */}
-                <NavLink
-                  to="/fashion-news"
-                  className={({ isActive }) => {
-                    return `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${
-                      isActive && "bg-gray-100 text-primary"
-                    }`;
-                  }}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  {!collapsed && "Fashion News"}
-                </NavLink>
-                <NavLink
-                  to="/image-ai-search"
-                  className={({ isActive }) => {
-                    return `flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${
-                      isActive && "bg-gray-100 text-primary"
-                    }`;
-                  }}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  {!collapsed && "Image + AI Search"}
-                </NavLink>
-              </nav>
-            </div>
+  return (
+    // Main grid layout container - responsive with collapsible sidebar
+    <div
+      className={`grid min-h-screen w-full ${
+        collapsed
+          ? "md:grid-cols-[72px_1fr]" // Collapsed: narrow sidebar
+          : "md:grid-cols-[240px_1fr]" // Expanded: full sidebar width
+      }`}
+    >
+      {/* Sidebar - Hidden on mobile, visible on medium+ screens */}
+      <aside className="hidden md:block border-r bg-background backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-full flex-col">
+          {/* Logo section with conditional sizing based on collapse state */}
+          <div className="flex h-14 items-center border-b px-4">
+            <Link to="/" className="flex items-center gap-2">
+              <img
+                src={logo}
+                alt="Logo"
+                className={collapsed ? "h-8 w-8" : "h-10 w-10"}
+              />
+            </Link>
           </div>
-        </div>
-        <div className="flex flex-col overflow-hidden">
-          <header className="flex h-14 items-center justify-between gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-            {/* Desktop collapse toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden md:inline-flex"
-              onClick={() => setCollapsed((v) => !v)}
+
+          {/* Navigation menu with active state styling */}
+          <nav className="flex-1 px-2 py-4 text-sm font-medium space-y-1">
+            {/* Home/Dashboard link */}
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors
+                 text-muted-foreground hover:bg-muted hover:text-foreground
+                 ${isActive ? "bg-muted text-foreground" : ""}`
+              }
             >
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle sidebar</span>
-            </Button>
-            
-            <div className="flex items-center gap-4 ml-auto">
+              <Home className="h-4 w-4" />
+              {!collapsed && "Home"}
+            </NavLink>
+
+            {/* Fashion News link */}
+            <NavLink
+              to="/fashion-news"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors
+                 text-muted-foreground hover:bg-muted hover:text-foreground
+                 ${isActive ? "bg-muted text-foreground" : ""}`
+              }
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {!collapsed && "Fashion News"}
+            </NavLink>
+
+            <NavLink
+              to="/image-ai-search"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors
+                 text-muted-foreground hover:bg-muted hover:text-foreground
+                 ${isActive ? "bg-muted text-foreground" : ""}`
+              }
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {!collapsed && "Image + AI Search"}
+            </NavLink>
+          </nav>
+        </div>
+      </aside>
+
+      {/* Main content area */}
+      <div className="flex flex-col">
+        {/* Top header bar with controls and user menu */}
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          {/* Sidebar toggle button - only visible on medium+ screens */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:inline-flex"
+            onClick={() => setCollapsed((v) => !v)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          {/* Right side controls */}
+          <div className="ml-auto flex items-center gap-3">
+            {/* Button to navigate to avatar creation */}
             <Button
-              className="bg-blue-500 text-white"
               onClick={() => navigate("/avatar-canvas")}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Try On Avatar
             </Button>
+
+            {/* User dropdown menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full"
-                >
+                <Button variant="secondary" size="icon" className="rounded-full">
                   <CircleUser className="h-5 w-5" />
-                  <span className="sr-only">Toggle user menu</span>
                 </Button>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 align="end"
-                className="min-w-[220px] p-2 rounded-xl shadow-lg bg-white border border-gray-100"
+                className="w-56 rounded-xl border bg-popover text-popover-foreground shadow-lg"
               >
-                <div className="flex flex-col items-center gap-2 py-2 border-b border-gray-100 mb-2">
-                  <CircleUser className="h-6 w-6 text-gray-500 mb-1" />
-                  <span className="font-semibold text-gray-900 text-sm">
+                {/* User profile section */}
+                <div className="flex flex-col items-center gap-1 py-3 border-b border-border mb-2">
+                  <CircleUser className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm font-semibold">
                     {user?.email}
                   </span>
-                  <span className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-0.5 mt-1">
+                  <span className="text-xs text-muted-foreground bg-muted rounded px-2 py-0.5">
                     {user?.role?.replace(/_/g, " ")}
                   </span>
                 </div>
-                <DropdownMenuItem
-                  asChild
-                  className="flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer"
-                >
+
+                {/* Menu items */}
+                <DropdownMenuItem asChild>
                   <Link
                     to="/change-password"
-                    className="flex items-center gap-2 w-full"
+                    className="flex items-center gap-2"
                   >
-                    <ShieldCheck className="h-4 w-4 text-blue-500" />
-                    <span>Change Password</span>
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    Change Password
                   </Link>
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-                                <Settings className="h-4 w-4 text-gray-400" />
-                                <span>Settings</span>
-                            </DropdownMenuItem> */}
-                {/* <DropdownMenuItem className="flex items-center gap-2 px-3 py-2 rounded hover:bg-blue-50 transition-colors cursor-pointer">
-                                <HelpCircle className="h-4 w-4 text-gray-400" />
-                                <span>Support</span>
-                            </DropdownMenuItem> */}
-                <DropdownMenuSeparator className="my-2" />
+
+                <DropdownMenuSeparator />
+
+                {/* Logout button with destructive styling */}
                 <DropdownMenuItem
-                  className="flex items-center gap-2 px-3 py-2 rounded hover:bg-red-50 transition-colors cursor-pointer"
                   onClick={logout}
+                  className="text-destructive focus:bg-destructive/10"
                 >
-                  <span className="flex items-center gap-2 text-red-600 font-medium">
-                    <Loader2 className="h-4 w-4 text-red-500" /> Logout
-                  </span>
+                  <Loader2 className="h-4 w-4 mr-2" />
+                  Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            </div>
-          </header>
-          <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-hidden">
-            <Outlet />
-          </main>
-        </div>
-      </div>
-    );
-};
+          </div>
+        </header>
 
-export default DashboardLayout;
+        {/* Main content area where child routes are rendered */}
+        <main className="flex-1 p-4 lg:p-6 overflow-hidden">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default DashboardLayout

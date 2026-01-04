@@ -106,6 +106,28 @@ const AvatarDetails: React.FC = () => {
     return list.reduce((best, cur) => (cur.confidence > (best.confidence ?? 0) ? cur : best), list[0]);
   };
 
+  const getMaxByType = (results: any[], type: string) =>
+    results
+      .filter((r) => r.type === type && r.position !== null)
+      .sort((a, b) => b.confidence - a.confidence)[0] || null;
+
+  const getBestOutfitOrParts = (results: any[]) => {
+    const outfits = results
+      .filter((r) => r.type === "outfit" && r.position !== null)
+      .sort((a, b) => b.confidence - a.confidence);
+
+    if (outfits.length > 0) {
+      return { outfit: outfits[0] }; // ONLY ONE
+    }
+
+    return {
+      shirt: getMaxByType(results, "shirt"),
+      pant: getMaxByType(results, "pant"),
+      shoe: getMaxByType(results, "shoe"),
+    };
+  };
+
+
   // Effect to detect outfit items when component mounts
   useEffect(() => {
     const run = async () => {
@@ -123,9 +145,10 @@ const AvatarDetails: React.FC = () => {
         if (!data?.results) throw new Error('Invalid response');
 
         // Process detection results
-        const bestOutfit = getBestByType(data.results, 'outfit');
-        if (bestOutfit) {
-          setDetected({ outfit: bestOutfit });
+        const selection = getBestOutfitOrParts(data.results);
+
+        if (selection) {
+          setDetected(selection);
         } else {
           // Handle individual item detection
           const bestShirt = getBestByType(data.results, 'shirt');
@@ -149,6 +172,9 @@ const AvatarDetails: React.FC = () => {
 
     run();
   }, []);
+
+  const hasOutfit = Boolean(detected.outfit);
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Page header */}
@@ -213,62 +239,44 @@ const AvatarDetails: React.FC = () => {
         {/* Right column - Detected outfit items */}
         <section className="lg:col-span-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Map through detected outfit items */}
-            {Object.keys(detected).map((type) => {
-              const detectedItem = detected[type];
-              // Use fallback mock data if no detection result
-              const fallback = MOCK_OUTFIT.find((m) => m.part.toLowerCase() === type);
-              const image = detectedItem?.itemUrl || fallback?.image;
-              const title = fallback?.title || (type.charAt(0).toUpperCase() + type.slice(1));
-              const description = fallback?.description || 'Detected item from similarity search.';
-              const size = fallback?.size || '-';
-              const occasion = fallback?.occasion || '-';
-              const fabric = fallback?.fabric || '-';
-              const price = fallback?.price || '-';
-              const purchaseLink = fallback?.purchaseLink || '#';
+            {hasOutfit ? (
+  <Card>
+    <div className="h-64 bg-muted flex items-center justify-center">
+      <img
+        src={detected.outfit.itemUrl}
+        className="object-contain h-full"
+      />
+    </div>
 
-              return (
-                <Card key={type} className="flex flex-col">
-                  {/* Product image */}
-                  <div className="h-44 bg-muted flex items-center justify-center overflow-hidden">
-                    {image ? (
-                      <img src={image} alt={`${type}`} className="object-contain h-full" />
-                    ) : (
-                      <div className="text-muted-foreground">No image</div>
-                    )}
-                  </div>
-                  <CardContent className="flex-1">
-                    {/* Product header with type and price */}
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs text-muted-foreground">{type || 'outfit'}</div>
-                      <div className="text-sm font-semibold">{price || '24000'}</div>
-                    </div>
-                    <CardTitle className="mt-2 text-lg">{title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-2">{description}</p>
+    <CardContent>
+      <CardTitle>Complete Outfit</CardTitle>
+      <p className="text-sm text-muted-foreground">
+        Confidence: {(detected.outfit.confidence * 100).toFixed(1)}%
+      </p>
+    </CardContent>
+  </Card>
+) : (
+  ['shirt', 'pant', 'shoe'].map(type => {
+    const item = detected[type];
+    if (!item) return null;
 
-                    {/* Product specifications */}
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                      <div>Size: <span className="text-foreground">{size || '35'}</span></div>
-                      <div>Occasion: <span className="text-foreground">{occasion}</span></div>
-                      <div>Fabric: <span className="text-foreground">{fabric}</span></div>
-                      <div>Link: <a href={purchaseLink} className="text-primary underline">Buy</a></div>
-                    </div>
-                    {/* Show confidence score if available */}
-                    {detectedItem && (
-                      <div className="mt-3 text-xs text-muted-foreground">Confidence: {(detectedItem.confidence * 100).toFixed(1)}%</div>
-                    )}
-                  </CardContent>
-                  <CardFooter className="justify-between">
-                    {/* Action buttons */}
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">View</Button>
-                      <Button variant="ghost" size="sm">Try On</Button>
-                    </div>
-                    <div className="text-xs text-muted-foreground">Type: {type}</div>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+    return (
+      <Card key={type}>
+        <div className="h-44 bg-muted flex items-center justify-center">
+          <img src={item.itemUrl} className="object-contain h-full" />
+        </div>
+
+        <CardContent>
+          <CardTitle>{type.toUpperCase()}</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Confidence: {(item.confidence * 100).toFixed(1)}%
+          </p>
+        </CardContent>
+      </Card>
+    );
+  })
+)}
+
           </div>
         </section>
       </div>

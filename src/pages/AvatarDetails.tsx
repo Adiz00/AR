@@ -115,16 +115,26 @@ const AvatarDetails: React.FC = () => {
     const outfits = results
       .filter((r) => r.type === "outfit" && r.position !== null)
       .sort((a, b) => b.confidence - a.confidence);
-
     if (outfits.length > 0) {
-      return { outfit: outfits[0] }; // ONLY ONE
+      // Only accept the "outfit" result when individual parts are NOT strong matches.
+      // If any of shirt/pant/shoe has a strong match (>= THRESHOLD), prefer returning parts.
+      const THRESHOLD = 0.65;
+      const bestShirt = getMaxByType(results, "shirt");
+      const bestPant = getMaxByType(results, "pant");
+      const bestShoe = getMaxByType(results, "shoe");
+
+      const shirtGood = Boolean(bestShirt && (bestShirt.confidence ?? 0) >= THRESHOLD);
+      const pantGood = Boolean(bestPant && (bestPant.confidence ?? 0) >= THRESHOLD);
+      const shoeGood = Boolean(bestShoe && (bestShoe.confidence ?? 0) >= THRESHOLD);
+
+      // If none of the individual parts are strong, return the outfit. Otherwise let caller
+      // handle individual-part detection by returning null/undefined.
+      if (!shirtGood && !pantGood && !shoeGood) {
+        return { outfit: outfits[0] }; // ONLY ONE
+      }
     }
 
-    return {
-      shirt: getMaxByType(results, "shirt"),
-      pant: getMaxByType(results, "pant"),
-      shoe: getMaxByType(results, "shoe"),
-    };
+    return null;
   };
 
 
@@ -143,7 +153,7 @@ const AvatarDetails: React.FC = () => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const data = await res.json();
         if (!data?.results) throw new Error('Invalid response');
-
+        console.log('detect results', data.results);
         // Process detection results
         const selection = getBestOutfitOrParts(data.results);
 
@@ -180,108 +190,290 @@ const AvatarDetails: React.FC = () => {
       {/* Page header */}
       <header className="mb-6">
         <h1 className="text-3xl font-bold">Avatar Details</h1>
-        <p className="text-muted-foreground mt-2">Review the avatar appearance and outfit details. Click any item to view purchase options.</p>
+        <p className="text-muted-foreground mt-2">
+          Review the avatar appearance and outfit details. Click any item to
+          view purchase options.
+        </p>
       </header>
 
       {/* Conditional rendering based on loading/error state */}
-      {
-        loadingDetected ? (
-          // Loading state with animation
-          <div className="text-center py-20 text-muted-foreground">
-           <DotLottieReact
-        src="https://lottie.host/7ec29151-fa84-45b3-97ad-dfc672f4760b/Zi8FX1bJUR.lottie"
-        loop
-        autoplay
-      />
-          </div>
-        ) : detectError ? (
-          // Error state display
-          <div className="text-center py-20 text-red-500">Error: {detectError}</div>
-        ) : (
-          // Main content grid
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left column - Avatar display and info */}
-            <section className="lg:col-span-1">
-              <Card>
-                {/* Avatar image container */}
-                <div className="h-96 bg-muted flex items-center justify-center overflow-hidden">
-                  <img src={avatarUrl} alt="avatar" className="h-full object-cover" />
-                </div>
-                {/* Avatar URL for debugging */}
-                <div className="px-4 pb-3 text-xs text-muted-foreground break-words">{avatarUrl}</div>
-                <CardHeader>
-                  <CardTitle>Model: Alex</CardTitle>
-                  <CardDescription>Height: 6'1" • Build: Slim • Gender: Male</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="text-sm text-muted-foreground">Detected size: M (Chest 38")</div>
-                    <div className="text-sm text-muted-foreground">Preferred fit: Slim</div>
-                    <div className="text-sm text-muted-foreground">Last updated: Oct 12, 2025</div>
-                  </div>
-                </CardContent>
-                <CardFooter className="justify-between">
-                  <Button variant="ghost">Edit Avatar</Button>
-                  <Button>Save Outfit</Button>
-                </CardFooter>
-              </Card>
-
-              {/* Quick actions card */}
-              <Card className="mt-4 p-4">
-                <h3 className="text-lg font-semibold">Quick Actions</h3>
-                <div className="mt-3 flex flex-col gap-2">
-                  <Button variant="outline">Share Outfit</Button>
-                  <Button variant="ghost">Compare Sizes</Button>
-                </div>
-          </Card>
-        </section>
-
-        {/* Right column - Detected outfit items */}
-        <section className="lg:col-span-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {hasOutfit ? (
-  <Card>
-    <div className="h-64 bg-muted flex items-center justify-center">
-      <img
-        src={detected.outfit.itemUrl}
-        className="object-contain h-full"
-      />
-    </div>
-
-    <CardContent>
-      <CardTitle>Complete Outfit</CardTitle>
-      <p className="text-sm text-muted-foreground">
-        Confidence: {(detected.outfit.confidence * 100).toFixed(1)}%
-      </p>
-    </CardContent>
-  </Card>
-) : (
-  ['shirt', 'pant', 'shoe'].map(type => {
-    const item = detected[type];
-    if (!item) return null;
-
-    return (
-      <Card key={type}>
-        <div className="h-44 bg-muted flex items-center justify-center">
-          <img src={item.itemUrl} className="object-contain h-full" />
+      {loadingDetected ? (
+        // Loading state with animation
+        <div className="text-center py-20 text-muted-foreground">
+          <DotLottieReact
+            src="https://lottie.host/7ec29151-fa84-45b3-97ad-dfc672f4760b/Zi8FX1bJUR.lottie"
+            loop
+            autoplay
+          />
         </div>
+      ) : detectError ? (
+        // Error state display
+        <div className="text-center py-20 text-red-500">
+          Error: {detectError}
+        </div>
+      ) : (
+        // Main content grid
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left column - Avatar display and info */}
+          <section className="lg:col-span-1">
+            <Card>
+              {/* Avatar image container */}
+              <div className="h-96 bg-muted flex items-center justify-center overflow-hidden">
+                <img
+                  src={avatarUrl}
+                  alt="avatar"
+                  className="h-full object-cover"
+                />
+              </div>
+              {/* Avatar URL for debugging */}
+              <div className="px-4 pb-3 text-xs text-muted-foreground break-words">
+                {avatarUrl}
+              </div>
+              <CardHeader>
+                <CardTitle>Model: Alex</CardTitle>
+                <CardDescription>
+                  Height: 6'1" • Build: Slim • Gender: Male
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground">
+                    Detected size: M (Chest 38")
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Preferred fit: Slim
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Last updated: Oct 12, 2025
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="justify-between">
+                <Button variant="ghost">Edit Avatar</Button>
+                <Button>Save Outfit</Button>
+              </CardFooter>
+            </Card>
 
-        <CardContent>
-          <CardTitle>{type.toUpperCase()}</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Confidence: {(item.confidence * 100).toFixed(1)}%
-          </p>
-        </CardContent>
-      </Card>
-    );
-  })
-)}
+            {/* Quick actions card */}
+            <Card className="mt-4 p-4">
+              <h3 className="text-lg font-semibold">Quick Actions</h3>
+              <div className="mt-3 flex flex-col gap-2">
+                <Button variant="outline">Share Outfit</Button>
+                <Button variant="ghost">Compare Sizes</Button>
+              </div>
+            </Card>
+          </section>
 
-          </div>
-        </section>
-      </div>
-      )
-      }
+          {/* Right column - Detected outfit items */}
+          <section className="lg:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {hasOutfit ? (
+                <Card>
+                  <div className="h-64 bg-muted flex items-center justify-center">
+                    <img
+                      // src={detected.outfit.itemUrl}
+                      src={avatarUrl}
+                      className="object-contain h-full"
+                    />
+                  </div>
+
+                  {/* Card Content */}
+                      <CardContent className="p-5">
+                        {/* Category Badge */}
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
+                            {/* {type.toUpperCase()} */}
+                            OUTFIT
+                          </span>
+                          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                            {/* {(item.confidence * 100).toFixed(0)}% Match */}
+                            100% Match
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">
+                          {/* {item.title ||
+                            `Premium ${
+                              type.charAt(0).toUpperCase() + type.slice(1)
+                            }`} */}
+                            Item
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                          {/* {item.description ||
+                            `High-quality ${type} perfect for your style.`} */}
+                          Description of the outfit item.
+                        </p>
+
+                        {/* Details Grid */}
+                        {/* {(item.size || item.fabric || item.occasion) && (
+                          <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                            {item.size && (
+                              <div>
+                                <p className="text-slate-500 font-medium">
+                                  Size
+                                </p>
+                                <p className="text-slate-900 font-semibold">
+                                  {item.size}
+                                </p>
+                              </div>
+                            )}
+                            {item.fabric && (
+                              <div>
+                                <p className="text-slate-500 font-medium">
+                                  Material
+                                </p>
+                                <p className="text-slate-900 font-semibold">
+                                  {item.fabric}
+                                </p>
+                              </div>
+                            )}
+                            {item.occasion && (
+                              <div className="col-span-2">
+                                <p className="text-slate-500 font-medium">
+                                  Occasion
+                                </p>
+                                <p className="text-slate-900 font-semibold">
+                                  {item.occasion}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )} */}
+
+                        {/* Price Section */}
+                        <div className="border-t pt-4 mb-4">
+                          <p className="text-3xl font-bold text-slate-900">
+                            {/* {item.price || "$99"} */}
+                            $199
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Free shipping on orders over $50
+                          </p>
+                        </div>
+
+                        {/* Buy Now Button */}
+                        <Button
+                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 rounded-lg transition-all duration-200"
+                          onClick={() =>
+                            window.open("#", "_blank")
+                          }
+                        >
+                          Buy Now
+                        </Button>
+                      </CardContent>
+                </Card>
+              ) : (
+                ["shirt", "pant", "shoe"].map((type) => {
+                  const item = detected[type];
+                  if (!item) return null;
+
+                  return (
+                    <Card
+                      key={type}
+                      className="overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    >
+                      {/* Product Image */}
+                      <div className="h-64 bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center overflow-hidden border-b">
+                        <img
+                          src={item.itemUrl}
+                          alt={type}
+                          className="object-contain h-full w-full p-4"
+                        />
+                      </div>
+
+                      {/* Card Content */}
+                      <CardContent className="p-5">
+                        {/* Category Badge */}
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-semibold rounded-full">
+                            {type.toUpperCase()}
+                          </span>
+                          <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                            {(item.confidence * 100).toFixed(0)}% Match
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2">
+                          {item.title ||
+                            `Premium ${
+                              type.charAt(0).toUpperCase() + type.slice(1)
+                            }`}
+                        </h3>
+
+                        {/* Description */}
+                        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                          {item.description ||
+                            `High-quality ${type} perfect for your style.`}
+                        </p>
+
+                        {/* Details Grid */}
+                        {(item.size || item.fabric || item.occasion) && (
+                          <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                            {item.size && (
+                              <div>
+                                <p className="text-slate-500 font-medium">
+                                  Size
+                                </p>
+                                <p className="text-slate-900 font-semibold">
+                                  {item.size}
+                                </p>
+                              </div>
+                            )}
+                            {item.fabric && (
+                              <div>
+                                <p className="text-slate-500 font-medium">
+                                  Material
+                                </p>
+                                <p className="text-slate-900 font-semibold">
+                                  {item.fabric}
+                                </p>
+                              </div>
+                            )}
+                            {item.occasion && (
+                              <div className="col-span-2">
+                                <p className="text-slate-500 font-medium">
+                                  Occasion
+                                </p>
+                                <p className="text-slate-900 font-semibold">
+                                  {item.occasion}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Price Section */}
+                        <div className="border-t pt-4 mb-4">
+                          <p className="text-3xl font-bold text-slate-900">
+                            {item.price || "$99"}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Free shipping on orders over $50
+                          </p>
+                        </div>
+
+                        {/* Buy Now Button */}
+                        <Button
+                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 rounded-lg transition-all duration-200"
+                          onClick={() =>
+                            window.open(item.purchaseLink || "#", "_blank")
+                          }
+                        >
+                          Buy Now
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

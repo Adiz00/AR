@@ -18,7 +18,6 @@ import avatarShirt from '../assets/avatar-shirt.png';
 import avatarPant from '../assets/avatar-pant.png';
 import avatarShoes from '../assets/avatar-shoes.png';
 import { useLocation } from 'react-router-dom';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
 // Type definitions for outfit items
 type OutfitItem = {
@@ -98,6 +97,7 @@ const AvatarDetails: React.FC = () => {
   const [detected, setDetected] = useState<Record<string, any>>({});
   const [loadingDetected, setLoadingDetected] = useState(false);
   const [detectError, setDetectError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   // Helper function to get the best match by type from detection results
   const getBestByType = (results: any[], type: string) => {
@@ -129,7 +129,9 @@ const AvatarDetails: React.FC = () => {
 
       // If none of the individual parts are strong, return the outfit. Otherwise let caller
       // handle individual-part detection by returning null/undefined.
-      if (!shirtGood && !pantGood && !shoeGood) {
+      if ((shirtGood || pantGood || shoeGood) && outfits[0]?.confidence >= THRESHOLD) {
+        return { outfit: outfits[0] }; // ONLY ONE
+      } else if (!shirtGood && !pantGood && !shoeGood) {
         return { outfit: outfits[0] }; // ONLY ONE
       }
     }
@@ -143,6 +145,21 @@ const AvatarDetails: React.FC = () => {
     const run = async () => {
       setLoadingDetected(true);
       setDetectError(null);
+      setProgress(0);
+      const startTime = Date.now();
+      const interval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000; // seconds
+        let newProgress = (elapsed / 60) * 100;
+        if (newProgress >= 100) {
+          newProgress = 100;
+          clearInterval(interval);
+        } else if (elapsed > 60 && newProgress >= 95) {
+          newProgress = 95;
+          clearInterval(interval);
+        }
+        setProgress(newProgress);
+      }, 100);
+
       try {
         // Call backend API for outfit detection using CLIP similarity
         const res = await fetch('http://localhost:5000/similarity/clip', {
@@ -172,8 +189,12 @@ const AvatarDetails: React.FC = () => {
 
           setDetected(out);
         }
+        clearInterval(interval);
+        setProgress(100);
       } catch (err: any) {
         console.error('detect error', err);
+        clearInterval(interval);
+        setProgress(100);
         setDetectError(`${err?.message} | No avatar selected` || 'Failed to detect items');
       } finally {
         setLoadingDetected(false);
@@ -198,13 +219,17 @@ const AvatarDetails: React.FC = () => {
 
       {/* Conditional rendering based on loading/error state */}
       {loadingDetected ? (
-        // Loading state with animation
-        <div className="text-center py-20 text-muted-foreground">
-          <DotLottieReact
-            src="https://lottie.host/7ec29151-fa84-45b3-97ad-dfc672f4760b/Zi8FX1bJUR.lottie"
-            loop
-            autoplay
-          />
+        // Loading state with progress bar
+        <div className="text-center py-20">
+          <div className="w-full max-w-md mx-auto">
+            <div className="bg-gray-200 rounded-full h-4 mb-4">
+              <div
+                className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <p className="text-muted-foreground">Detecting outfit... {Math.round(progress)}%</p>
+          </div>
         </div>
       ) : detectError ? (
         // Error state display

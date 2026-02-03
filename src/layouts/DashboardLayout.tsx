@@ -136,12 +136,22 @@ const DashboardLayout = () => {
 
           {/* Right side controls */}
           <div className="ml-auto flex items-center gap-3">
-            {/* Button to navigate to avatar creation */}
+
             <Button
-              onClick={() => navigate("/avatar-canvas")}
+              // onClick={() => navigate("http://localhost:3000/")}
+              onClick={() =>   navigate(`avatar-canvas`)}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Try On Avatar
+              Try On 3d Avatar
+            </Button>
+
+            {/* Button to navigate to avatar creation */}
+            <Button
+              // onClick={() => navigate("http://localhost:3000/")}
+              onClick={() =>   window.location.href = "http://localhost:3000/"}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Try On 2d Avatar
             </Button>
 
             {/* User dropdown menu */}

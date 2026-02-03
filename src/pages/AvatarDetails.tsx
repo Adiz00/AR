@@ -141,68 +141,68 @@ const AvatarDetails: React.FC = () => {
 
 
   // Effect to detect outfit items when component mounts
-  useEffect(() => {
-    const run = async () => {
-      setLoadingDetected(true);
-      setDetectError(null);
-      setProgress(0);
-      const startTime = Date.now();
-      const interval = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000; // seconds
-        let newProgress = (elapsed / 60) * 100;
-        if (newProgress >= 100) {
-          newProgress = 100;
-          clearInterval(interval);
-        } else if (elapsed > 60 && newProgress >= 95) {
-          newProgress = 95;
-          clearInterval(interval);
-        }
-        setProgress(newProgress);
-      }, 100);
+  // useEffect(() => {
+  //   const run = async () => {
+  //     setLoadingDetected(true);
+  //     setDetectError(null);
+  //     setProgress(0);
+  //     const startTime = Date.now();
+  //     const interval = setInterval(() => {
+  //       const elapsed = (Date.now() - startTime) / 1000; // seconds
+  //       let newProgress = (elapsed / 60) * 100;
+  //       if (newProgress >= 100) {
+  //         newProgress = 100;
+  //         clearInterval(interval);
+  //       } else if (elapsed > 60 && newProgress >= 95) {
+  //         newProgress = 95;
+  //         clearInterval(interval);
+  //       }
+  //       setProgress(newProgress);
+  //     }, 100);
 
-      try {
-        // Call backend API for outfit detection using CLIP similarity
-        const res = await fetch('http://localhost:5000/similarity/clip', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ avatarUrl }),
-        });
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        const data = await res.json();
-        if (!data?.results) throw new Error('Invalid response');
-        console.log('detect results', data.results);
-        // Process detection results
-        const selection = getBestOutfitOrParts(data.results);
+  //     try {
+  //       // Call backend API for outfit detection using CLIP similarity
+  //       const res = await fetch('http://localhost:5000/similarity/clip', {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify({ avatarUrl }),
+  //       });
+  //       if (!res.ok) throw new Error(`Status ${res.status}`);
+  //       const data = await res.json();
+  //       if (!data?.results) throw new Error('Invalid response');
+  //       console.log('detect results', data.results);
+  //       // Process detection results
+  //       const selection = getBestOutfitOrParts(data.results);
 
-        if (selection) {
-          setDetected(selection);
-        } else {
-          // Handle individual item detection
-          const bestShirt = getBestByType(data.results, 'shirt');
-          const bestPant = getBestByType(data.results, 'pant');
-          const bestShoe = getBestByType(data.results, 'shoe');
+  //       if (selection) {
+  //         setDetected(selection);
+  //       } else {
+  //         // Handle individual item detection
+  //         const bestShirt = getBestByType(data.results, 'shirt');
+  //         const bestPant = getBestByType(data.results, 'pant');
+  //         const bestShoe = getBestByType(data.results, 'shoe');
 
-          const out: Record<string, any> = {};
-          if (bestShirt) out.shirt = bestShirt;
-          if (bestPant) out.pant = bestPant;
-          if (bestShoe) out.shoe = bestShoe;
+  //         const out: Record<string, any> = {};
+  //         if (bestShirt) out.shirt = bestShirt;
+  //         if (bestPant) out.pant = bestPant;
+  //         if (bestShoe) out.shoe = bestShoe;
 
-          setDetected(out);
-        }
-        clearInterval(interval);
-        setProgress(100);
-      } catch (err: any) {
-        console.error('detect error', err);
-        clearInterval(interval);
-        setProgress(100);
-        setDetectError(`${err?.message} | No avatar selected` || 'Failed to detect items');
-      } finally {
-        setLoadingDetected(false);
-      }
-    };
+  //         setDetected(out);
+  //       }
+  //       clearInterval(interval);
+  //       setProgress(100);
+  //     } catch (err: any) {
+  //       console.error('detect error', err);
+  //       clearInterval(interval);
+  //       setProgress(100);
+  //       setDetectError(`${err?.message} | No avatar selected` || 'Failed to detect items');
+  //     } finally {
+  //       setLoadingDetected(false);
+  //     }
+  //   };
 
-    run();
-  }, []);
+  //   run();
+  // }, []);
 
   const hasOutfit = Boolean(detected.outfit);
 

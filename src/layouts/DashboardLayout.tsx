@@ -116,6 +116,19 @@ const DashboardLayout = () => {
               <ShieldCheck className="h-4 w-4" />
               {!collapsed && "Image + AI Search"}
             </NavLink>
+
+              <NavLink
+              to="/body-measurement"
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors
+                 text-muted-foreground hover:bg-muted hover:text-foreground
+                 ${isActive ? "bg-muted text-foreground" : ""}`
+              }
+            >
+              <ShieldCheck className="h-4 w-4" />
+              {!collapsed && "Body Measurement"}
+            </NavLink> 
+
           </nav>
         </div>
       </aside>

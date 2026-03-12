@@ -13,7 +13,7 @@ import ForgetPasswordPage from './pages/ForgetPassword.tsx';
 import VerifyOtpPage from './pages/VerifyOtp.tsx';
 import Home from './pages/Home.tsx';
 import AvatarDetails from './pages/AvatarDetails.tsx';
-
+import MeasurementFrontend from './pages/MeasurementFrontend.jsx';
 
 const router = createBrowserRouter([
     // {
@@ -62,6 +62,12 @@ const router = createBrowserRouter([
             {
                 path: 'image-ai-search',
                 element: <ImageAiSearch />,
+                // element: <MeasurementFrontend/>,
+            },
+            {
+                path: 'body-measurement',
+                // element: <ImageAiSearch />,
+                element: <MeasurementFrontend/>,
             },
         ],
     },
